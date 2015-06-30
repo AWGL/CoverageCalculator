@@ -111,8 +111,8 @@ public class Coverage {
                 }
 
             }
-        }
 
+        }
     }
 
     public void extractBasesPassingMinThresholdFromDepthOfCoverage(){
