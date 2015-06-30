@@ -14,14 +14,11 @@ public class Main {
             System.exit(1);
         }
 
-        //get file extension
-        String[] fields = args[0].split("\\.");
-
         //read bed list
         ListReader bedFilePathList = new ListReader(new File(args[1]));
         bedFilePathList.parseListReader();
 
-        if (fields[1].equals("vcf")){ //haplotypecaller
+        if (args[0].substring(args[0].length() - 3).equals("vcf")){ //haplotypecaller
 
             //calculate coverage from GATK HaplotypeCaller
             Coverage coverage = new Coverage(new File(args[0]), bedFilePathList, Integer.parseInt(args[2]));
