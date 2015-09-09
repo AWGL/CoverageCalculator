@@ -10,35 +10,17 @@ public class Main {
     public static void main(String[] args) {
 
         if (args.length != 3){
-            System.err.println("Usage: <File> <List> <Min>");
+            System.err.println("Usage: <GATKCoverageFile> <BED> <Min>");
             System.exit(1);
         }
 
-        //read bed list
-        ListReader bedFilePathList = new ListReader(new File(args[1]));
-        bedFilePathList.parseListReader();
-
-        if (args[0].substring(args[0].length() - 3).equals("vcf")){ //haplotypecaller
-
-            //calculate coverage from GATK HaplotypeCaller
-            Coverage coverage = new Coverage(new File(args[0]), bedFilePathList, Integer.parseInt(args[2]));
-            coverage.populateTargetBases();
-            coverage.extractBasesPassingMinThresholdFromVCF();
-            coverage.extractBasesFailingMinThreshold();
-            coverage.windowMissingBases();
-            coverage.printCoverageMetrics();
-
-        } else { //depth of coverage
-
-            //calculate coverage from GATK depth of coverage
-            Coverage coverage = new Coverage(new File(args[0]), bedFilePathList, Integer.parseInt(args[2]));
-            coverage.populateTargetBases();
-            coverage.extractBasesPassingMinThresholdFromDepthOfCoverage();
-            coverage.extractBasesFailingMinThreshold();
-            coverage.windowMissingBases();
-            coverage.printCoverageMetrics();
-
-        }
+        //calculate coverage from GATK depth of coverage
+        Coverage coverage = new Coverage(new File(args[0]), new File(args[1]), Integer.parseInt(args[2]));
+        coverage.populateTargetBases();
+        coverage.extractBasesPassingMinDepth();
+        coverage.extractBasesFailingMinDepth();
+        coverage.windowMissingBases();
+        coverage.printCoverageMetrics();
 
     }
 }
