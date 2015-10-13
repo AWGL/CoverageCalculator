@@ -43,26 +43,34 @@ public class Coverage {
 
         log.log(Level.INFO, "Extracting target bases");
 
+        HashMap<String, String> keyValuePairs = new HashMap<>();
+
         //read target bases into memory
         try (AbstractFeatureReader reader = AbstractFeatureReader.getFeatureReader(bedFile.toString(), new BEDCodec(BEDCodec.StartOffset.ONE), false)) {
             Iterable<BEDFeature> iter = reader.iterator();
 
             for (BEDFeature feature : iter) {
-                String[] fields = feature.getName().split(":");
 
-                if (!targetBasesByGene.containsKey(fields[0])) targetBasesByGene.put(fields[0], new HashSet<GenomicLocation>());
+                //split GTF feature
+                for (String fields : feature.getName().split(";")){
+                    String[] keyValuePair = fields.trim().split(" ");
+                    keyValuePairs.put(keyValuePair[0], keyValuePair[1]);
+                }
+
+                if (!targetBasesByGene.containsKey(keyValuePairs.get("gene_name"))) targetBasesByGene.put(keyValuePairs.get("gene_name"), new HashSet<GenomicLocation>());
 
                 //split bed feature into single base coordinates
                 for (int j = feature.getStart(); j < feature.getEnd(); ++j) {
                     GenomicLocation genomicLocation = new GenomicLocation(feature.getContig(), j);
 
                     //store unique bases from a single region
-                    targetBasesByGene.get(fields[0]).add(genomicLocation);
+                    targetBasesByGene.get(keyValuePairs.get("gene_name")).add(genomicLocation);
 
                     //store all target bases
                     totalTargetBases.add(genomicLocation);
                 }
 
+                keyValuePairs.clear();
             }
 
             reader.close();
@@ -210,8 +218,7 @@ public class Coverage {
                 writer.print(sampleIds.get(n));
 
                 for (Map.Entry<String, HashSet<GenomicLocation>> geneSet : targetBasesByGene.entrySet()){
-                    writer.write(geneMissingBasesBySample.get(n).get(geneSet.getKey()).size());
-                    writer.print("\t" + String.format("%.4g", (double) (geneSet.getValue().size() - geneMissingBasesBySample.get(n).get(geneSet.getKey()).size()) / geneSet.getValue().size()));
+                    writer.print("\t" + String.format("%.4g", ((double) (geneSet.getValue().size() - geneMissingBasesBySample.get(n).get(geneSet.getKey()).size()) / geneSet.getValue().size()) * 100));
                 }
 
                 writer.println();
