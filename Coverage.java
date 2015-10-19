@@ -25,8 +25,8 @@ public class Coverage {
 
     private ArrayList<String> sampleIds = new ArrayList<>();
 
-    private HashMap<String, HashSet<GenomicLocation>> targetBasesByGene = new HashMap<>();
-    private HashSet<GenomicLocation> totalTargetBases = new HashSet<>();
+    private HashMap<String, HashSet<GenomicLocation>> targetBasesByGene = new HashMap<>(); //Gene:[single-base pos]
+    private HashSet<GenomicLocation> totalTargetBases = new HashSet<>(); //[all single base pos]
 
     private ArrayList<HashSet<GenomicLocation>> totalPassingBasesBySample = new ArrayList<>();
     private ArrayList<ArrayList<GenomicLocation>> totalMissingBasesBySample = new ArrayList<>();
@@ -54,7 +54,7 @@ public class Coverage {
                 if (!targetBasesByGene.containsKey(fields[0])) targetBasesByGene.put(fields[0], new HashSet<GenomicLocation>());
 
                 //split bed feature into single base coordinates
-                for (int j = feature.getStart(); j < feature.getEnd(); ++j) {
+                for (int j = feature.getStart(); j < feature.getEnd() + 1; ++j) { //convert to single base 1-pos coordinates
                     GenomicLocation genomicLocation = new GenomicLocation(feature.getContig(), j);
 
                     //store unique bases from a single region
@@ -130,7 +130,7 @@ public class Coverage {
         }
 
     }
-    public void extractBasesFailingMinDepth(){
+    public void extractBasesFailingMinDepth(){ //todo optimise
 
         log.log(Level.INFO, "Extracting bases failing minimum depth");
 

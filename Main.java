@@ -16,6 +16,7 @@ public class Main {
 
         //calculate coverage from GATK depth of coverage
         Coverage coverage = new Coverage(new File(args[0]), new File(args[1]), Integer.parseInt(args[2]));
+
         coverage.populateTargetBases();
         coverage.extractBasesPassingMinDepth();
         coverage.extractBasesFailingMinDepth();
