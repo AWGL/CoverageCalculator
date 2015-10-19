@@ -43,34 +43,27 @@ public class Coverage {
 
         log.log(Level.INFO, "Extracting target bases");
 
-        HashMap<String, String> keyValuePairs = new HashMap<>();
-
         //read target bases into memory
         try (AbstractFeatureReader reader = AbstractFeatureReader.getFeatureReader(bedFile.toString(), new BEDCodec(BEDCodec.StartOffset.ONE), false)) {
             Iterable<BEDFeature> iter = reader.iterator();
 
             for (BEDFeature feature : iter) {
 
-                //split GTF feature
-                for (String fields : feature.getName().split(";")){
-                    String[] keyValuePair = fields.trim().split(" ");
-                    keyValuePairs.put(keyValuePair[0], keyValuePair[1]);
-                }
+                String[] fields = feature.getName().split(":");
 
-                if (!targetBasesByGene.containsKey(keyValuePairs.get("gene_name"))) targetBasesByGene.put(keyValuePairs.get("gene_name"), new HashSet<GenomicLocation>());
+                if (!targetBasesByGene.containsKey(fields[0])) targetBasesByGene.put(fields[0], new HashSet<GenomicLocation>());
 
                 //split bed feature into single base coordinates
                 for (int j = feature.getStart(); j < feature.getEnd(); ++j) {
                     GenomicLocation genomicLocation = new GenomicLocation(feature.getContig(), j);
 
                     //store unique bases from a single region
-                    targetBasesByGene.get(keyValuePairs.get("gene_name")).add(genomicLocation);
+                    targetBasesByGene.get(fields[0]).add(genomicLocation);
 
                     //store all target bases
                     totalTargetBases.add(genomicLocation);
                 }
 
-                keyValuePairs.clear();
             }
 
             reader.close();
