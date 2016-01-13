@@ -1,7 +1,6 @@
 package nhs.genetics.cardiff;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -84,14 +83,14 @@ public class Main {
             }
         }
 
-        //print ROI for debugging
+        /*print ROI for debugging
         try (PrintWriter printWriter = new PrintWriter("debug.bed")) {
             for (GenomicLocation location : GenomicLocation.mergeBases(new ArrayList<>(targetGenomicLocations.get("BRCA1")))){
                 printWriter.println(location.getContig() + "\t" + (location.getStartPosition() - 1) + "\t" + location.getEndPosition());
             }
         } catch (IOException e){
             log.log(Level.SEVERE, "could not write debug file");
-        }
+        }*/
 
         //read GATK depth of coverage file
         GatkDepthOfCoverageParser gatkDepthOfCoverageParser = new GatkDepthOfCoverageParser(new File(args[0]));
@@ -110,7 +109,7 @@ public class Main {
                     Coverage coverage = new Coverage(target.getValue(), gatkDepthOfCoverageParser.getDepthOfCoverage().get(n), minDepth);
                     coverage.populateCoverageMetics();
 
-                    System.out.println(gatkDepthOfCoverageParser.getSampleIds().get(n) + "\t" + target.getKey() + "\t" + coverage.getCoveragePercentage());
+                    System.out.println(gatkDepthOfCoverageParser.getSampleIds().get(n) + "\t" + target.getKey() + "\t" + String.format("%.2f", coverage.getCoveragePercentage() * 100) + "%");
 
                     for (GenomicLocation location : coverage.getWindowMissingBases()){
                         printWriter.println(location.getContig() + "\t" + location.getStartPosition() + "\t" + location.getEndPosition());
