@@ -18,14 +18,25 @@ public class Main {
         int padding = 20;
 
         if (args.length != 3){
-            System.err.println("Usage: <PerBaseCoverage> <Gene/ENSTList> <GTF>");
+            System.err.println("Usage: <PerBaseCoverage> <Gene/ENSTList> <GTF/GFF>");
             System.err.println("-d Minimum depth [" + minDepth + "]");
             System.err.println("-p Interval padding [" + padding + "]");
             System.exit(1);
         }
 
+        boolean gtfOrGff = true;
         String line, id;
         HashMap<String, HashSet<GenomicLocation>> targetGenomicLocations = new HashMap<>();
+
+        //determine transcript file format
+        String[] fields = args[2].split("\\.");
+        if (fields[fields.length - 1].toLowerCase().equals("gtf")){
+            gtfOrGff = true;
+        } else if (fields[fields.length - 1].toLowerCase().equals("gff3")){
+            gtfOrGff = false;
+        } else {
+            throw new IllegalArgumentException("Cannot detemine transcript file format with extension: " + fields[fields.length - 1].toLowerCase());
+        }
 
         //parse gene list
         ListReader listReader = new ListReader(new File(args[1]));
@@ -36,7 +47,7 @@ public class Main {
             targetGenomicLocations.put(element, new HashSet<GenomicLocation>());
         }
 
-        //create target list of bases; read GTF
+        //create target list of bases; read GTF/GFF
         log.log(Level.INFO, "Extracting target regions of interest");
         try (BufferedReader reader = new BufferedReader(new FileReader(new File(args[2])))){
             while ((line = reader.readLine()) != null) {
@@ -44,28 +55,55 @@ public class Main {
                 //skip headers
                 if (!Pattern.matches("^#.*", line))
                 {
-                    //split record and add to array
-                    GTFRecord gtfRecord = new GTFRecord(line);
-                    gtfRecord.parseGTFRecord();
+                    if (gtfOrGff){
 
-                    // ROI
-                    if ((gtfRecord.getFeature().equals("CDS") || gtfRecord.getFeature().equals("stop_codon")) && gtfRecord.getAttributes().get("transcript_biotype").equals("protein_coding")){
+                        //split record and add to array
+                        GTFRecord gtfRecord = new GTFRecord(line);
+                        gtfRecord.parseGTFRecord();
 
-                        if (listReader.getUniqueElements().contains(gtfRecord.getAttributes().get("gene_name"))){
-                            id = gtfRecord.getAttributes().get("gene_name");
-                        } else if (listReader.getUniqueElements().contains(gtfRecord.getAttributes().get("transcript_id"))){
-                            id = gtfRecord.getAttributes().get("transcript_id");
-                        } else {
-                            continue;
+                        // ROI
+                        if ((gtfRecord.getFeature().equals("CDS") || gtfRecord.getFeature().equals("stop_codon")) && gtfRecord.getAttributes().get("transcript_biotype").equals("protein_coding")){
+
+                            if (listReader.getUniqueElements().contains(gtfRecord.getAttributes().get("gene_name"))){
+                                id = gtfRecord.getAttributes().get("gene_name");
+                            } else if (listReader.getUniqueElements().contains(gtfRecord.getAttributes().get("transcript_id"))){
+                                id = gtfRecord.getAttributes().get("transcript_id");
+                            } else {
+                                continue;
+                            }
+
+                            //split regions feature into single base coordinates
+                            for (int j = gtfRecord.getGenomicLocation().getStartPosition() - padding; j < gtfRecord.getGenomicLocation().getEndPosition() + padding; ++j) {
+                                targetGenomicLocations.get(id).add(new GenomicLocation(gtfRecord.getGenomicLocation().getContig(), j));
+                            }
+
                         }
 
-                        //split regions feature into single base coordinates
-                        for (int j = gtfRecord.getGenomicLocation().getStartPosition() - padding; j < gtfRecord.getGenomicLocation().getEndPosition() + padding; ++j) {
-                            targetGenomicLocations.get(id).add(new GenomicLocation(gtfRecord.getGenomicLocation().getContig(), j));
+                    } else {
+
+                        //split record and add to array
+                        GFF3Record gff3Record = new GFF3Record(line);
+                        gff3Record.parseGFFRecord();
+
+                        // ROI
+                        if (gff3Record.getType().equals("CDS")){
+
+                            if (listReader.getUniqueElements().contains(gff3Record.getAttributes().get("gene"))){
+                                id = gff3Record.getAttributes().get("gene");
+                            } else if (listReader.getUniqueElements().contains(gff3Record.getAttributes().get("transcript_id"))){
+                                id = gff3Record.getAttributes().get("transcript_id");
+                            } else {
+                                continue;
+                            }
+
+                            //split regions feature into single base coordinates
+                            for (int j = gff3Record.getGenomicLocation().getStartPosition() - padding; j < gff3Record.getGenomicLocation().getEndPosition() + padding; ++j) {
+                                targetGenomicLocations.get(id).add(new GenomicLocation(gff3Record.getGenomicLocation().getContig(), j));
+                            }
+
                         }
 
                     }
-
                 }
 
             }
