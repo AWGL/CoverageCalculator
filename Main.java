@@ -17,14 +17,29 @@ public class Main {
         int minDepth = 30;
         int padding = 20;
 
-        if (args.length != 3){
+        if (args.length < 3 || args.length > 5){
             System.err.println("Usage: <PerBaseCoverage> <Gene/ENSTList> <GTF/GFF>");
             System.err.println("-d Minimum depth [" + minDepth + "]");
             System.err.println("-p Interval padding [" + padding + "]");
             System.exit(1);
         }
 
-        boolean gtfOrGff = true;
+        //get cmd line args
+        for (String arg : args){
+            if (Pattern.matches("^-d.*", arg)){
+                String[] fields = arg.split("d");
+                minDepth = Integer.parseInt(fields[1]);
+            }
+            if (Pattern.matches("^-p.*", arg)){
+                String[] fields = arg.split("p");
+                padding = Integer.parseInt(fields[1]);
+            }
+        }
+
+        log.log(Level.INFO, "Padding: " + padding);
+        log.log(Level.INFO, "Minimum Depth: " + minDepth);
+
+        boolean gtfOrGff;
         String line, id;
         HashMap<String, HashSet<GenomicLocation>> targetGenomicLocations = new HashMap<>();
 
@@ -32,8 +47,10 @@ public class Main {
         String[] fields = args[2].split("\\.");
         if (fields[fields.length - 1].toLowerCase().equals("gtf")){
             gtfOrGff = true;
+            log.log(Level.INFO, "Determined transcript file as GTF");
         } else if (fields[fields.length - 1].toLowerCase().equals("gff3")){
             gtfOrGff = false;
+            log.log(Level.INFO, "Determined transcript file as GFF3");
         } else {
             throw new IllegalArgumentException("Cannot detemine transcript file format with extension: " + fields[fields.length - 1].toLowerCase());
         }
@@ -44,7 +61,7 @@ public class Main {
 
         //initalise map
         for (String element : listReader.getUniqueElements()){
-            targetGenomicLocations.put(element, new HashSet<GenomicLocation>());
+            targetGenomicLocations.put(element, new HashSet<GenomicLocation>()); //1-based coordinates
         }
 
         //create target list of bases; read GTF/GFF
@@ -73,8 +90,8 @@ public class Main {
                             }
 
                             //split regions feature into single base coordinates
-                            for (int j = gtfRecord.getGenomicLocation().getStartPosition() - padding; j < gtfRecord.getGenomicLocation().getEndPosition() + padding; ++j) {
-                                targetGenomicLocations.get(id).add(new GenomicLocation(gtfRecord.getGenomicLocation().getContig(), j));
+                            for (int j = gtfRecord.getGenomicLocation().getStartPosition() - padding; j < (gtfRecord.getGenomicLocation().getEndPosition()+1) + padding; ++j) {
+                                targetGenomicLocations.get(id).add(new GenomicLocation(gtfRecord.getGenomicLocation().getContig(), j)); //1-based
                             }
 
                         }
@@ -97,8 +114,8 @@ public class Main {
                             }
 
                             //split regions feature into single base coordinates
-                            for (int j = gff3Record.getGenomicLocation().getStartPosition() - padding; j < gff3Record.getGenomicLocation().getEndPosition() + padding; ++j) {
-                                targetGenomicLocations.get(id).add(new GenomicLocation(gff3Record.getGenomicLocation().getContig(), j));
+                            for (int j = gff3Record.getGenomicLocation().getStartPosition() - padding; j < (gff3Record.getGenomicLocation().getEndPosition()+1) + padding; ++j) {
+                                targetGenomicLocations.get(id).add(new GenomicLocation(gff3Record.getGenomicLocation().getContig(), j)); //1-based
                             }
 
                         }
@@ -111,7 +128,7 @@ public class Main {
             reader.close();
 
         } catch (IOException e) {
-            log.log(Level.SEVERE, "Could not read GTF file: " + e.getMessage());
+            log.log(Level.SEVERE, "Could not read GTF/GFF file: " + e.getMessage());
         }
 
         //print missing ids
@@ -131,7 +148,7 @@ public class Main {
         }*/
 
         //read GATK depth of coverage file
-        GatkDepthOfCoverageParser gatkDepthOfCoverageParser = new GatkDepthOfCoverageParser(new File(args[0]));
+        GatkDepthOfCoverageParser gatkDepthOfCoverageParser = new GatkDepthOfCoverageParser(new File(args[0])); //1-based
         gatkDepthOfCoverageParser.parseGatkDepthOfCoverageFile();
 
         //loop over samples and report coverage metrics
@@ -150,7 +167,7 @@ public class Main {
                     System.out.println(gatkDepthOfCoverageParser.getSampleIds().get(n) + "\t" + target.getKey() + "\t" + String.format("%.2f", coverage.getCoveragePercentage() * 100) + "%");
 
                     for (GenomicLocation location : coverage.getWindowMissingBases()){
-                        printWriter.println(location.getContig() + "\t" + location.getStartPosition() + "\t" + location.getEndPosition());
+                        printWriter.println(location.getContig() + "\t" + (location.getStartPosition() - 1) + "\t" + location.getEndPosition()); //print to bed; convert to 0-based on the fly
                     }
 
                 }
