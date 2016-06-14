@@ -1,11 +1,17 @@
 package nhs.genetics.cardiff;
 
+import nhs.genetics.cardiff.framework.GenomicLocation;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
 /**
- * Created by matt on 10/03/15.
+ * Class for holding coverage information
+ *
+ * @author  Matt Lyon
+ * @version 1.0
+ * @since   2015-03-15
  */
 
 public class Coverage {

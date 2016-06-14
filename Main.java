@@ -1,5 +1,8 @@
 package nhs.genetics.cardiff;
 
+import nhs.genetics.cardiff.framework.*;
+import nhs.genetics.cardiff.framework.GFF3Record;
+
 import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,9 +11,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+/**
+ * Program for reporting coverage metrics with gene context
+ *
+ * @author  Matt Lyon
+ * @version 1.0
+ * @since   2015-03-15
+ */
 public class Main {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
+    private static final String version = "2.0.0";
 
     public static void main(String[] args) {
 
@@ -18,6 +29,7 @@ public class Main {
         int padding = 20;
 
         if (args.length < 3 || args.length > 5){
+            System.err.println("CoverageCalculator v" + version);
             System.err.println("Usage: <PerBaseCoverage> <Gene/ENSTList> <GTF/GFF>");
             System.err.println("-d Minimum depth [" + minDepth + "]");
             System.err.println("-p Interval padding [" + padding + "]");
