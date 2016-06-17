@@ -69,7 +69,13 @@ public class Main {
 
         //parse gene list
         ListReader listReader = new ListReader(new File(args[1]));
-        listReader.parseListReader();
+
+        try {
+            listReader.parseListReader();
+        } catch (IOException e){
+            log.log(Level.SEVERE, "Could not read gene list " + e.getMessage());
+            System.exit(1);
+        }
 
         //initalise map
         for (String element : listReader.getUniqueElements()){
@@ -141,6 +147,7 @@ public class Main {
 
         } catch (IOException e) {
             log.log(Level.SEVERE, "Could not read GTF/GFF file: " + e.getMessage());
+            System.exit(1);
         }
 
         //print missing ids
@@ -159,6 +166,17 @@ public class Main {
             log.log(Level.SEVERE, "could not write debug file");
         }*/
 
+        try (PrintWriter printWriter = new PrintWriter("debug.bed")) {
+            for (Map.Entry<String, HashSet<GenomicLocation>> it : targetGenomicLocations.entrySet()){
+                for (GenomicLocation genomicLocation : it.getValue()){
+                    printWriter.println(genomicLocation.getConcatenatedLocation());
+                }
+            }
+        } catch (IOException e){
+            log.log(Level.SEVERE, "could not write debug file");
+        }
+
+
         //read GATK depth of coverage file
         GatkDepthOfCoverageParser gatkDepthOfCoverageParser = new GatkDepthOfCoverageParser(new File(args[0])); //1-based
         gatkDepthOfCoverageParser.parseGatkDepthOfCoverageFile();
@@ -170,7 +188,7 @@ public class Main {
             try (PrintWriter printWriter = new PrintWriter(gatkDepthOfCoverageParser.getSampleIds().get(n) + "_gaps.bed")) {
 
                 for (Map.Entry<String, HashSet<GenomicLocation>> target : targetGenomicLocations.entrySet()){
-                    log.log(Level.INFO, "Generating coverage metrics for target: " + target.getKey());
+                    log.log(Level.FINE, "Generating coverage metrics for target: " + target.getKey());
 
                     //calculate coverage from per base coverage file
                     Coverage coverage = new Coverage(target.getValue(), gatkDepthOfCoverageParser.getDepthOfCoverage().get(n), minDepth);
