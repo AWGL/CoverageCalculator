@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 public class Main {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
-    private static final String version = "2.0.0";
+    private static final String version = "2.0.1";
 
     public static void main(String[] args) {
 
@@ -54,6 +54,7 @@ public class Main {
         boolean gtfOrGff;
         String line, id;
         HashMap<String, HashSet<GenomicLocation>> targetGenomicLocations = new HashMap<>();
+        GatkDepthOfCoverageParser gatkDepthOfCoverageParser = null;
 
         //determine transcript file format
         String[] fields = args[2].split("\\.");
@@ -174,12 +175,18 @@ public class Main {
             }
         } catch (IOException e){
             log.log(Level.SEVERE, "could not write debug file");
+            System.exit(1);
         }
 
 
         //read GATK depth of coverage file
-        GatkDepthOfCoverageParser gatkDepthOfCoverageParser = new GatkDepthOfCoverageParser(new File(args[0])); //1-based
-        gatkDepthOfCoverageParser.parseGatkDepthOfCoverageFile();
+        try {
+            gatkDepthOfCoverageParser = new GatkDepthOfCoverageParser(new File(args[0])); //1-based
+            gatkDepthOfCoverageParser.parseGatkDepthOfCoverageFile();
+        } catch (IOException e){
+            log.log(Level.SEVERE, "could not read coverage file: " + e.getMessage());
+            System.exit(1);
+        }
 
         //loop over samples and report coverage metrics
         for (int n = 0; n < gatkDepthOfCoverageParser.getSampleIds().size(); ++n){
@@ -204,6 +211,7 @@ public class Main {
 
             } catch (IOException e){
                 log.log(Level.SEVERE, "Could not write gaps for: " + gatkDepthOfCoverageParser.getSampleIds().get(n));
+                System.exit(1);
             }
 
         }
