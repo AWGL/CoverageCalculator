@@ -167,7 +167,7 @@ public class Main {
             log.log(Level.SEVERE, "could not write debug file");
         }*/
 
-        try (PrintWriter printWriter = new PrintWriter("debug.bed")) {
+        /*try (PrintWriter printWriter = new PrintWriter("debug.bed")) {
             for (Map.Entry<String, HashSet<GenomicLocation>> it : targetGenomicLocations.entrySet()){
                 for (GenomicLocation genomicLocation : it.getValue()){
                     printWriter.println(genomicLocation.getConcatenatedLocation());
@@ -176,7 +176,7 @@ public class Main {
         } catch (IOException e){
             log.log(Level.SEVERE, "could not write debug file");
             System.exit(1);
-        }
+        }*/
 
 
         //read GATK depth of coverage file
